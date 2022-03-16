@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico de linha</title>
+    <script src="https://d3js.org/d3.v4.js"></script>
+</head>
+
+<body>
+    <style>
+        .linhas {
+            stroke-width: 4px;
+            fill: none;
+        }
+
+        .labelTexto {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            font-weight: bolder;
+        }
+
+        .labelOutline {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            font-weight: bolder;
+            fill: white;
+            stroke: white;
+            stroke-width: 4px;
+            opacity: 0.9;
+        }
+
+        #linha_primeiroTurno,
+        #linha_segundoTurno {
+            stroke: black;
+            stroke-width: 1px;
+            stroke-dasharray: 2, 2;
+        }
+
+        g.primeiroTurno text,
+        g.segundoTurno text {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .cursor {
+            stroke: black;
+            stroke-width: 2px;
+            opacity: 0;
+        }
+
+        .data {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+
+        }
+
+        #label_Lula,
+        #label_Bolsonaro,
+        #label_Ciro,
+        #label_Indecisos {
+            transform: translate(10px, 5px);
+        }
+
+        #label_Moro {
+            transform: translate(10px, -10px);
+        }
+
+        #label_Dória {
+            transform: translate(10px, -7px);
+        }
+
+        #label_Tebet {
+            transform: translate(10px, 15px);
+        }
+    </style>
+    <section style="width:960px; margin: 0 auto">
+        <h2>Agregador de pesquisas</h2>
+        <p>Intenção de voto em pesquisas presenciais</p>
+        <p>
+            <span>Lula</span>
+            <span>Bolsonaro</span>
+            <span>Moro</span>
+            <span>Ciro</span>
+            <span>Dória</span>
+            <span>Tebet</span>
+        </p>
+        <div id="todosPresenciais"></div>
+        <p>Fontes: Institutos de pesquisa???</p>
+        <p>Metodologia</p>
+    </section>
+</body>
+
+</html>
+
+<script>
+    // **********************
+    // Lê o arquivo de dados e cria um array a partir deles. O arquivo está com endereço local por causa de Cross Domain
+    // **********************
+    d3.json('http://127.0.0.1:5500/todosPresenciais.json', function (data) {
+
+        // **********************
+        // Define uma série de variáveis:
+        // **********************
+
+        // Largura, altura e margem
+        // *****
+        var margin = {
+                top: 50,
+                bottom: 50,
+                right: 40,
+                left: 20,
+            },
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+
+        // **********************
+        // Seleciona o ID onde SVG vai ser inserido e define uma série de atributos
+        // **********************
+        svg = d3.select('#todosPresenciais')
+            .append('svg')
+            .attr('data-contains', 'lineChart')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .attr('viewBox', '0 0 960 500')
+            .attr('preserveAspectRatio', 'xMinYMin')
+            .append('g')
+            .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+
+        // **********************
+        // Transforma a coluna de data em uma váriável dimensionada pelo tempo e traduz algumas variáveis para o português
+        // **********************
+        parseDate = d3.timeParse('%d/%m/%Y')
+        var pt_BR = {
+            'decimal': ',',
+            'thousands': '.',
+            'grouping': [3],
+            'currency': ['$', ''],
+            'dateTime': '%a %b %e %X %Y',
+            'date': '%d/%m/%Y',
+            'time': '%H:%M:%S',
+            'periods': ['AM', 'PM'],
+            'days': ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'],
+            'shortDays': ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+            'months': ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto',
+                'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+            ],
+            'shortMonths': ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov',
+                'Dez'
+            ]
+        };
+
+        d3.timeFormatDefaultLocale(pt_BR);
+
+        // **********************
+        // Simplifica o acesso aos dados que estão em uma aba
+        // **********************
+        data = data['Todos presenciais']
+
+        // **********************
+        // Atribui variáveis para todos os dados presentes no dataset
+        // **********************
+        data.forEach(function (d) {
+            d.diaPesquisa = parseDate(d.Data);
+            d.lula = +d.Lula;
+            d.bolsonaro = +d.Bolsonaro;
+            d.moro = +d.Moro;
+            d.ciro = +d.Ciro;
+            d.doria = +d.Dória;
+            d.tebet = +d.Tebet;
+            d.indecisos = +d.Indecisos;
+        });
+
+        // **********************
+        // Define o eixo X
+        // **********************
+        primeiraPesquisa = new Date(2021, 09, 08),
+            segundoTurno = new Date(2022, 10, 15)
+
+        eixoX = d3.scaleTime()
+            // .domain(d3.extent(data, function (d) { return d.diaPesquisa;})) // baseado nas datas da coluna dia da pesquisa
+            .domain([primeiraPesquisa,
+                segundoTurno
+            ]) // Qual é o intervalo de datas do eixo, vai desde a primeira pesquisa até o segundo turno
+            .range([0, width - 20])
+        svg.append('g')
+            .attr('id', 'eixoX')
+            .attr('transform', 'translate(20,' + height + ')')
+            .call(d3.axisBottom(eixoX)
+                .tickFormat(d3.timeFormat('%d.%b'))
+                .tickValues(data.map(function (d) {
+                    return d.diaPesquisa;
+                }))
+                .tickSizeInner(15)
+                .tickSizeOuter(10)
+                // .ticks(d3.timeYear) // Mostra apenas os anos no eixo X
+
+            )
+        svg.selectAll('.domain').remove()
+        //svg.selectAll('.tick line').remove() // remove as linhas verticais do eixo X
+
+        // **********************
+        // Define o eixo Y
+        // **********************
+        eixoY = d3.scaleLinear()
+            .domain([0, 50]) // valor mínimo e máximo do domínio
+            .range([height,
+                0
+            ]) // altura que o eixo vai ocupar e como vai dividir o domínio, neste caso, do zero até a altura do gráfico
+        svg.append('g')
+            .attr('id', 'eixoY')
+            .attr('stroke-width', '2')
+            .call(d3.axisLeft(eixoY)
+                .tickSize(-width)
+            .ticks(5)) // Quantidade de itens no eixo Y
+            .call(g => g.select('.domain')
+                .remove()) // remove a linha vertical do eixo Y
+            .call(g => g.selectAll('.tick:not(:first-of-type) line')
+                .attr('stroke-width', 1)
+                .attr('opacity', 0.2)) // mexe na opacidade de todas as linhas do eixo X, menos a primeira
+            .call(g => g.selectAll(".tick text")
+                .attr("x", 10)
+                .attr("dy", -6)) // move a posição dos textos do eixo Y
+
+        // **********************
+        // Define um array a partir das colunas do dataset para a posterior criação das linhas do gráficos
+        // **********************
+        candidatos = ['Lula', 'Bolsonaro', 'Moro', 'Ciro', 'Dória', 'Tebet', 'Indecisos'];
+
+        // **********************
+        // Define as cores de cada linha do gráfico
+        // **********************
+
+        // Cores dos partidos:
+        var PT = '#c4122d',
+            PL = '#FF4500',
+            PODE = '#31b44b',
+            PDT = '#FE8E6D',
+            PSDB = '#0080FF',
+            MDB = '#00aa4f',
+            INDECISOS = '#5c5c5c'
+
+        color = d3.scaleOrdinal()
+            .domain(candidatos)
+            .range([PT, PL, PODE, PDT, PSDB, MDB,
+                INDECISOS
+            ]);
+
+        // **********************
+        // Cria as linhas do gráfico
+        // **********************
+        linhas = svg.append('g')
+            .attr('class', 'linhas')
+            .attr('transform', 'translate(20,0)')
+
+        for (var i = 0; i < candidatos.length; i++) {
+            linhas.append('path')
+                .datum(data)
+                .attr('id', 'linha_' + candidatos[i])
+                .attr('class', 'linha')
+                .attr('stroke', color(candidatos[i]))
+                .attr('d', d3.line()
+                    .x(function (d) {
+                        return eixoX(d.diaPesquisa);
+                    })
+                    .y(function (d) {
+                        return eixoY(d[candidatos[i]]);
+                    }))
+        };
+
+        // **********************
+        // Cria uma área para para interação com eventos do mouse
+        // **********************
+        mouseG = svg.append('g')
+            .attr('class', 'mouse-over-effects')
+            .attr('transform', 'translate(20,0)');
+
+        // **********************
+        // Cria uma linha para marcar o movimento do mouse
+        // **********************
+        mouseG.append('g')
+            .data(data)
+            .append('path')
+            .attr('class', 'cursor')
+            .attr('d', function () {
+                var d = 'M' + eixoX(data[data.length - 1].diaPesquisa) + ',' + height + ' ' + eixoX(data[
+                    data.length - 1].diaPesquisa) + ',' + 0;
+                return d;
+            })
+            .style('opacity', '1')
+
+        dia = mouseG.append('text')
+            .attr('class', 'data')
+            .attr('transform', 'translate(' + eixoX(data[data.length - 1].diaPesquisa) + ',-20)')
+            .style('opacity', '1')
+
+        //.text(data[data.length - 1].diaPesquisa)
+
+        selectLinhas = document.getElementsByClassName('linha')
+
+        mousePerLine = mouseG.selectAll('.mouse-over-effects')
+            .data(candidatos)
+            .enter()
+            .append('g')
+            .attr('class', 'mouse-per-line')
+            //.attr('transform', 'translate(' + eixoX(data[data.length - 1].diaPesquisa) + ',' + eixoY(data[data.length - 1].Lula) + ')')
+            .attr('transform', function (d, i) {
+                return 'translate(' + eixoX(data[data.length - 1].diaPesquisa) + ',' + eixoY(data[data
+                    .length - 1][d]) + ')'
+            })
+
+        // **********************
+        // Cria um círculo para cada label
+        // **********************
+        mousePerLine.append('circle')
+            .attr('r', 4)
+            .attr('stroke', 'white')
+            .attr('fill', function (d) {
+                return color(d);
+            })
+            .attr('stroke-width', '2px')
+            .attr('opacity', '1')
+
+        // **********************
+        // Cria os labels para as linhas do gráfico
+        // **********************
+        labelLinha = mousePerLine.append('text')
+            .attr('id', function (d) {
+                return 'label_' + d;
+            })
+        //.attr('transform', 'translate(10,3)')
+
+        // **********************
+        // Cria uma 'defesa' branca no fundo do texto
+        // **********************
+        labelLinha.append('tspan')
+            .attr('class', 'labelOutline')
+            .attr('x', 0)
+            .text(function (d, i) {
+                return d
+            })
+
+        // **********************
+        // Texto
+        // **********************
+        labelLinha.append('tspan')
+            .attr('class', 'labelTexto')
+            .attr('x', 0)
+            .attr('fill', function (d) {
+                return color(d);
+            })
+            .text(function (d, i) {
+                return d + ' ' + data[data.length - 1][d] + '%'
+            })
+
+        // **********************
+        // Cria um retângulo para capturar os eventos do mouse no canvas. Não é possível capturar eventos nos elementos 'g'
+        // **********************
+        mouseG.append('svg:rect')
+            .attr('width', linhas.node().getBBox().width)
+            .attr('height', height)
+            .attr('fill', 'none')
+            .attr('pointer-events', 'all')
+
+            // *****
+            // Mouseover
+            // *****
+            .on('mouseover', function () {
+                d3.select('.cursor')
+                    .style('opacity', '1')
+                d3.selectAll('.mouse-per-line circle')
+                    .style('opacity', '1')
+                d3.selectAll('.mouse-per-line text')
+                    .style('opacity', '1')
+            })
+
+            // *****
+            // Mousemove
+            // *****
+            .on('mousemove', function () {
+                var mouse = d3.mouse(this);
+
+                meses = new Array(12);
+                meses[1] = "Jan";
+                meses[2] = "Fev";
+                meses[3] = "Mar";
+                meses[4] = "Abr";
+                meses[5] = "Mai";
+                meses[6] = "Jun";
+                meses[7] = "Jul";
+                meses[8] = "Ago";
+                meses[9] = "Set";
+                meses[10] = "Out";
+                meses[11] = "Nov";
+                meses[12] = "Dez";
+
+                d3.select('.data')
+                    .text(eixoX.invert(mouse[0]).getDate() + ' ' + meses[eixoX.invert(mouse[0])
+                            .getMonth() + 1] +
+                        ' ' + eixoX.invert(mouse[0]).getFullYear())
+                    .attr('transform', function (d) {
+                        return 'translate(' + (mouse[0] - 30) + ',-20)';
+                    })
+
+                d3.select('.cursor')
+                    .attr('d', function () {
+                        var d = 'M' + mouse[0] + ',' + height;
+                        d += ' ' + mouse[0] + ',' + 0;
+                        return d;
+                    })
+
+                d3.selectAll('.mouse-per-line')
+                    .attr('transform', function (d, i) {
+                        //console.log(width / mouse[0])
+                        var xDate = eixoX.invert(mouse[0]),
+                            bisect = d3.bisector(function (d) {
+                                return d.diaPesquisa;
+                            }).right;
+                        idx = bisect(candidatos[i], xDate)
+
+                        var beginning = 0,
+                            end = selectLinhas[i].getTotalLength(),
+                            target = null;
+
+                        while (true) {
+                            target = Math.floor((beginning + end) / 2);
+                            pos = selectLinhas[i].getPointAtLength(target);
+                            if ((target === end || target === beginning) && pos.x !== mouse[0]) {
+                                break;
+                            }
+                            if (pos.x > mouse[0]) end = target;
+                            else if (pos.x < mouse[0]) beginning = target;
+                            else break;
+                        }
+
+                        d3.select(this).select('.labelOutline')
+                            // .text(y.invert(pos.y).toFixed(2)); // Para plotar o número
+                            .text(candidatos[i] + ' ' + (eixoY.invert(pos.y).toFixed(0)) + '%')
+
+                        d3.select(this).select('.labelTexto')
+                            .text(candidatos[i] + ' ' + (eixoY.invert(pos.y).toFixed(0)) + '%')
+
+                        return 'translate(' + mouse[0] + ',' + pos.y + ')'
+                    });
+            });
+
+        // **********************
+        // Traça uma linha com a data do primeiro turno
+        // **********************
+        turno1 = svg.append('g')
+            .attr('class', 'primeiroTurno')
+        turno1.append('line')
+            .attr('id', 'linha_primeiroTurno')
+            .attr('transform', 'translate(20,5)')
+            .attr('x1', eixoX(new Date(2022, 9, 2)))
+            .attr('y1', 0)
+            .attr('x2', eixoX(new Date(2022, 9, 2)))
+            .attr('y2', height + 5)
+        turno1.append('text')
+            .text('1º Turno')
+            .attr('id', 'texto_primeiroTurno')
+            .attr('transform', 'translate(20,2)')
+            .attr('x', eixoX(new Date(2022, 09, 02)) - 18)
+            .attr('y', height + 23)
+        turno1.append('text')
+            .attr('id', 'data_primeiroTurno')
+            .text('2.Out')
+            .attr('transform', 'translate(20,2)')
+            .attr('x', eixoX(new Date(2022, 09, 02)) - 14)
+            .attr('y', height + 36)
+
+        // **********************
+        // Traça uma linha com a data do segundo turno
+        // **********************
+        turno2 = svg.append('g')
+            .attr('class', 'segundoTurno')
+        turno2.append('line')
+            .attr('id', 'linha_segundoTurno')
+            .attr('transform', 'translate(20,5)')
+            .attr('x1', eixoX(new Date(2022, 10, 15)))
+            .attr('y1', 0)
+            .attr('x2', eixoX(new Date(2022, 10, 15)))
+            .attr('y2', height + 7)
+        turno2.append('text')
+            .attr('id', 'texto_segundoTurno')
+            .text('2º Turno')
+            .attr('transform', 'translate(20,2)')
+            .attr('x', eixoX(new Date(2022, 10, 15)) - 18)
+            .attr('y', height + 23)
+        turno2.append('text')
+            .attr('id', 'data_segundoTurno')
+            .text('5.Nov')
+            .attr('transform', 'translate(20,2)')
+            .attr('x', eixoX(new Date(2022, 10, 15)) - 14)
+            .attr('y', height + 36)
+    });
+</script>

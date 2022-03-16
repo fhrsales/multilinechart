@@ -1,0 +1,30 @@
+{
+    "Todos presenciais": [{
+        "Data": "07/10/2021",
+        "Lula": "40",
+        "Bolsonaro": "26",
+        "Moro": "8",
+        "Ciro": "7",
+        "Dória": "2",
+        "Tebet": "1",
+        "Indecisos": "2"
+    }, {
+        "Data": "08/01/2022",
+        "Lula": "42",
+        "Bolsonaro": "27",
+        "Moro": "8",
+        "Ciro": "7",
+        "Dória": "2",
+        "Tebet": "3",
+        "Indecisos": "2"
+    }, {
+        "Data": "15/03/2022",
+        "Lula": "43",
+        "Bolsonaro": "28",
+        "Moro": "8",
+        "Ciro": "8",
+        "Dória": "3",
+        "Tebet": "1",
+        "Indecisos": "2"
+    }]
+}
