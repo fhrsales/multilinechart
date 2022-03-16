@@ -173,7 +173,7 @@
         // **********************
         // Define o eixo X
         // **********************
-        primeiraPesquisa = new Date(2021, 09, 08),
+        primeiraPesquisa = new Date(2021, 09, 17),
             segundoTurno = new Date(2022, 10, 15)
 
         eixoX = d3.scaleTime()
@@ -379,9 +379,9 @@
             })
 
             // *****
-            // Mousemove
+            // Mousemove / Touchmove
             // *****
-            .on('mousemove', function () {
+            .on('mousemove touchmove', function () {
                 var mouse = d3.mouse(this);
 
                 meses = new Array(12);
