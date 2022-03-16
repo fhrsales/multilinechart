@@ -134,7 +134,7 @@
             'decimal': ',',
             'thousands': '.',
             'grouping': [3],
-            'currency': ['$', ''],
+            'currency': ['R$', ''],
             'dateTime': '%a %b %e %X %Y',
             'date': '%d/%m/%Y',
             'time': '%H:%M:%S',
@@ -186,7 +186,7 @@
             .attr('id', 'eixoX')
             .attr('transform', 'translate(20,' + height + ')')
             .call(d3.axisBottom(eixoX)
-                .tickFormat(d3.timeFormat('%d.%b'))
+                .tickFormat(d3.timeFormat('%d %b'))
                 .tickValues(data.map(function (d) {
                     return d.diaPesquisa;
                 }))
@@ -211,7 +211,7 @@
             .attr('stroke-width', '2')
             .call(d3.axisLeft(eixoY)
                 .tickSize(-width)
-            .ticks(5)) // Quantidade de itens no eixo Y
+                .ticks(5)) // Quantidade de itens no eixo Y
             .call(g => g.select('.domain')
                 .remove()) // remove a linha vertical do eixo Y
             .call(g => g.selectAll('.tick:not(:first-of-type) line')
@@ -288,12 +288,18 @@
             })
             .style('opacity', '1')
 
+        // **********************
+        // padroniza a data da última pesquisa
+        // **********************
+        var ultimaPesquisa = data[data.length - 1].diaPesquisa
+        ultimaPesquisa = d3.timeFormat('%d %b %Y')(ultimaPesquisa)
+        console.log(ultimaPesquisa)
+
         dia = mouseG.append('text')
             .attr('class', 'data')
             .attr('transform', 'translate(' + eixoX(data[data.length - 1].diaPesquisa) + ',-20)')
             .style('opacity', '1')
-
-        //.text(data[data.length - 1].diaPesquisa)
+            .text(ultimaPesquisa)
 
         selectLinhas = document.getElementsByClassName('linha')
 
@@ -398,7 +404,7 @@
                             .getMonth() + 1] +
                         ' ' + eixoX.invert(mouse[0]).getFullYear())
                     .attr('transform', function (d) {
-                        return 'translate(' + (mouse[0] - 30) + ',-20)';
+                        return 'translate(' + (mouse[0]) + ',-20)';
                     })
 
                 d3.select('.cursor')
@@ -463,7 +469,7 @@
             .attr('y', height + 23)
         turno1.append('text')
             .attr('id', 'data_primeiroTurno')
-            .text('2.Out')
+            .text('2 Out')
             .attr('transform', 'translate(20,2)')
             .attr('x', eixoX(new Date(2022, 09, 02)) - 14)
             .attr('y', height + 36)
@@ -488,7 +494,7 @@
             .attr('y', height + 23)
         turno2.append('text')
             .attr('id', 'data_segundoTurno')
-            .text('5.Nov')
+            .text('5 Nov')
             .attr('transform', 'translate(20,2)')
             .attr('x', eixoX(new Date(2022, 10, 15)) - 14)
             .attr('y', height + 36)
