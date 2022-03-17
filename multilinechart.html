@@ -96,7 +96,7 @@
     // **********************
     // Lê o arquivo de dados e cria um array a partir deles. O arquivo está com endereço local por causa de Cross Domain
     // **********************
-    d3.json('http://127.0.0.1:5500/todosPresenciais.json', function (data) {
+    d3.json('http://127.0.0.1:5500/todosPresenciaisCompleto.json', function (data) {
 
         // **********************
         // Define uma série de variáveis:
@@ -173,8 +173,10 @@
         // **********************
         // Define o eixo X
         // **********************
-        primeiraPesquisa = new Date(2021, 09, 17),
-            segundoTurno = new Date(2022, 10, 15)
+        primeiraPesquisa = d3.min(data, function (d) {
+            return d.diaPesquisa;
+        });
+        segundoTurno = new Date(2022, 09, 30)
 
         eixoX = d3.scaleTime()
             // .domain(d3.extent(data, function (d) { return d.diaPesquisa;})) // baseado nas datas da coluna dia da pesquisa
@@ -186,14 +188,13 @@
             .attr('id', 'eixoX')
             .attr('transform', 'translate(20,' + height + ')')
             .call(d3.axisBottom(eixoX)
-                .tickFormat(d3.timeFormat('%d %b'))
-                .tickValues(data.map(function (d) {
-                    return d.diaPesquisa;
-                }))
+                // .tickFormat(d3.timeFormat('%d %b'))
+                // .tickValues(data.map(function (d) {
+                //     return d.diaPesquisa;
+                // }))
                 .tickSizeInner(15)
                 .tickSizeOuter(10)
-                // .ticks(d3.timeYear) // Mostra apenas os anos no eixo X
-
+                .ticks(d3.timeYear) // Mostra apenas os anos no eixo X
             )
         svg.selectAll('.domain').remove()
         //svg.selectAll('.tick line').remove() // remove as linhas verticais do eixo X
@@ -481,21 +482,21 @@
         turno2.append('line')
             .attr('id', 'linha_segundoTurno')
             .attr('transform', 'translate(20,5)')
-            .attr('x1', eixoX(new Date(2022, 10, 15)))
+            .attr('x1', eixoX(new Date(2022, 09, 30)))
             .attr('y1', 0)
-            .attr('x2', eixoX(new Date(2022, 10, 15)))
+            .attr('x2', eixoX(new Date(2022, 09, 30)))
             .attr('y2', height + 7)
         turno2.append('text')
             .attr('id', 'texto_segundoTurno')
             .text('2º Turno')
             .attr('transform', 'translate(20,2)')
-            .attr('x', eixoX(new Date(2022, 10, 15)) - 18)
+            .attr('x', eixoX(new Date(2022, 09, 30)) - 18)
             .attr('y', height + 23)
         turno2.append('text')
             .attr('id', 'data_segundoTurno')
-            .text('5 Nov')
+            .text('30 Out')
             .attr('transform', 'translate(20,2)')
-            .attr('x', eixoX(new Date(2022, 10, 15)) - 14)
+            .attr('x', eixoX(new Date(2022, 09, 30)) - 14)
             .attr('y', height + 36)
     });
 </script>
